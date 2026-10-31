@@ -1,0 +1,88 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // Helper functions
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function getUserData() {
+      return get(/databases/$(database)/documents/users/$(request.auth.uid)).data;
+    }
+
+    function isOrganizer() {
+      return isAuthenticated() && getUserData().role == 'organizer';
+    }
+
+    function isVolunteer() {
+      return isAuthenticated() && getUserData().role == 'volunteer';
+    }
+
+    // USERS COLLECTION
+    match /users/{userId} {
+      allow read: if isAuthenticated();
+      // Only user can write their own profile; cannot change role from volunteer to organizer once created
+      allow create: if isAuthenticated() && request.auth.uid == userId;
+      allow update: if isAuthenticated() && request.auth.uid == userId 
+                    && (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['role', 'uid']));
+      allow delete: if false;
+    }
+
+    // CAMPAIGNS COLLECTION
+    match /campaigns/{campaignId} {
+      // Authenticated users can view campaigns (organizers and volunteers)
+      allow read: if isAuthenticated();
+      
+      // Only organizers can create campaigns and they must be set as organizerId
+      allow create: if isOrganizer() && request.resource.data.organizerId == request.auth.uid;
+      
+      // Only the campaign organizer can update or delete the campaign
+      allow update: if isOrganizer() && resource.data.organizerId == request.auth.uid
+                    && request.resource.data.organizerId == resource.data.organizerId;
+      allow delete: if isOrganizer() && resource.data.organizerId == request.auth.uid;
+    }
+
+    // TASKS COLLECTION
+    match /tasks/{taskId} {
+      // Authenticated users can read tasks
+      allow read: if isAuthenticated();
+
+      // Organizers can create tasks
+      allow create: if isOrganizer() && request.resource.data.createdBy == request.auth.uid;
+
+      // Updating tasks
+      allow update: if isAuthenticated() && (
+        // Scenario A: Organizer owns the task/campaign -> full edit
+        (isOrganizer() && resource.data.createdBy == request.auth.uid) ||
+        
+        // Scenario B: Volunteer claims an unassigned task atomically
+        (
+          isVolunteer() &&
+          resource.data.assignedVolunteerId == null &&
+          request.resource.data.assignedVolunteerId == request.auth.uid &&
+          // Cannot modify other core fields
+          request.resource.data.title == resource.data.title &&
+          request.resource.data.campaignId == resource.data.campaignId
+        ) ||
+        
+        // Scenario C: Assigned volunteer updating status
+        (
+          isVolunteer() &&
+          resource.data.assignedVolunteerId == request.auth.uid &&
+          request.resource.data.assignedVolunteerId == resource.data.assignedVolunteerId &&
+          request.resource.data.title == resource.data.title &&
+          request.resource.data.campaignId == resource.data.campaignId
+        )
+      );
+
+      // Only task creator can delete task
+      allow delete: if isOrganizer() && resource.data.createdBy == request.auth.uid;
+    }
+  }
+}
+

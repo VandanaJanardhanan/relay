@@ -1,0 +1,30 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100" fill="none">
+  <defs>
+    <linearGradient id="relayGrad" x1="10" y1="90" x2="90" y2="10" gradientUnits="userSpaceOnUse">
+      <stop offset="0%" stop-color="#172B4D" />
+      <stop offset="50%" stop-color="#16A6A1" />
+      <stop offset="100%" stop-color="#36B37E" />
+    </linearGradient>
+    <filter id="softShadow" x="-20%" y="-20%" width="140%" height="140%">
+      <feDropShadow dx="0" dy="4" stdDeviation="4" flood-color="#16A6A1" flood-opacity="0.25"/>
+    </filter>
+  </defs>
+  
+  <!-- Outer glowing connecting loop -->
+  <path d="M 28 72 C 16 58 18 36 32 24 C 46 12 68 14 80 28 C 92 42 90 64 76 76 C 62 88 40 86 28 72" stroke="url(#relayGrad)" stroke-width="8" stroke-linecap="round" stroke-dasharray="140 20"/>
+  
+  <!-- Central dynamic baton / coordination pulse -->
+  <line x1="30" y1="70" x2="70" y2="30" stroke="#16A6A1" stroke-width="8" stroke-linecap="round" filter="url(#softShadow)"/>
+  
+  <!-- Active node 1 (Organizer) -->
+  <circle cx="30" cy="70" r="10" fill="#172B4D" stroke="#FFFFFF" stroke-width="3"/>
+  <circle cx="30" cy="70" r="4" fill="#36B37E"/>
+  
+  <!-- Active node 2 (Task in Motion) -->
+  <circle cx="50" cy="50" r="7" fill="#16A6A1" stroke="#FFFFFF" stroke-width="2.5"/>
+  
+  <!-- Active node 3 (Volunteer Action) -->
+  <circle cx="70" cy="30" r="10" fill="#36B37E" stroke="#FFFFFF" stroke-width="3"/>
+  <circle cx="70" cy="30" r="4" fill="#FFFFFF"/>
+</svg>
+
